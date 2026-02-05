@@ -1,591 +1,1082 @@
-// Hero's AI Chat Functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Verify that all necessary elements exist before trying to use them
-    const chatMessages = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input');
-    const sendButton = document.getElementById('send-message');
-    const typingIndicator = document.getElementById('typing-indicator');
-    const clearChatButton = document.getElementById('clear-chat');
-    const toggleSuggestionsButton = document.getElementById('toggle-suggestions');
-    const suggestedQuestions = document.getElementById('suggested-questions');
-    const suggestionButtons = document.querySelectorAll('.suggestion-btn');
-    
-    // Check if all elements exist before proceeding
-    if (!chatMessages || !chatInput || !sendButton) {
-        console.error('Chat elements not found!');
-        return; // Exit if elements not found
-    }
-    
-    console.log('Chat interface initialized'); // Debug log
-    
-    // Portfolio Information Database
-    const portfolioInfo = {
-        name: "Moneshwar S S",
-        education: {
-            bsc: {
-                degree: "BSc Computer Science",
-                institution: "SSM College of Arts and Science",
-                period: "2022 - Present",
-                percentage: "77.7%",
-                details: "Currently pursuing my Bachelor's degree with a focus on computer science fundamentals, programming languages, and software development principles."
-            },
-            hsc: {
-                degree: "Higher Secondary Certificate (HSC)",
-                institution: "Equitas Gurukul Matric Higher Secondary School",
-                period: "2020 - 2022",
-                percentage: "73.3%",
-                details: "Completed my higher secondary education with a focus on mathematics and computer science, building a strong foundation for my programming journey."
-            },
-            sslc: {
-                degree: "Secondary School Leaving Certificate (SSLC)",
-                institution: "MSP Solai Nadar Memorial Higher Secondary School",
-                period: "2020",
-                percentage: "73.2%",
-                details: "Completed my secondary education with a well-rounded curriculum that sparked my interest in technology and logical problem-solving."
-            }
-        },
-        skills: {
-            c: {
-                name: "C",
-                proficiency: "90%",
-                level: "Advanced",
-                description: "Strong foundation in C programming with deep understanding of memory management, pointers, and system-level programming."
-            },
-            cpp: {
-                name: "C++",
-                proficiency: "85%",
-                level: "Advanced",
-                description: "Expert in object-oriented programming with C++, including STL, templates, and modern C++ features."
-            },
-            java: {
-                name: "Java",
-                proficiency: "95%",
-                level: "Expert",
-                description: "Extensive experience with Java, creating robust applications with a focus on performance and reliability."
-            },
-            coreJava: {
-                name: "Core Java",
-                proficiency: "92%",
-                level: "Advanced",
-                description: "Mastery of Core Java concepts including multi-threading, collections, I/O streams, and advanced data structures."
-            },
-            fullStack: {
-                name: "Full Stack",
-                proficiency: "88%",
-                level: "Advanced",
-                description: "End-to-end development expertise spanning front-end, back-end, and database technologies.",
-                frontEnd: ["HTML5", "CSS3", "JavaScript", "React", "Angular"],
-                backEnd: ["Spring Boot", "Node.js", "Express", "Servlets", "JSP"],
-                database: ["MySQL", "MongoDB", "PostgreSQL", "Oracle"],
-                devOps: ["Git", "Docker", "Jenkins", "AWS"]
-            },
-            python: {
-                name: "Python",
-                proficiency: "45%",
-                level: "Basic",
-                description: "Basic knowledge of Python for data analysis, automation scripts, and simple web applications."
-            },
-            react: {
-                name: "React",
-                proficiency: "70%",
-                level: "Intermediate",
-                description: "Intermediate skills in building interactive user interfaces with React, including hooks and state management."
-            }
-        },
-        projects: {
-            selfParking: {
-                name: "Self-Parking System",
-                technologies: ["Arduino", "Ultrasonic Sensors", "Servo Motors", "C/C++", "Embedded Systems"],
-                description: "A smart parking solution that uses sensors and actuators to automatically park vehicles with precision and safety, reducing human error.",
-                features: [
-                    "Real-time obstacle detection and avoidance",
-                    "Automated parallel and perpendicular parking capability",
-                    "Distance measurement with high precision",
-                    "Intelligent path planning algorithm",
-                    "Safety mechanisms to prevent collisions"
-                ],
-                implementation: "The system was implemented using Arduino as the main controller, with ultrasonic sensors for distance measurement, and servo motors for controlling the vehicle's movement. The algorithms were written in C/C++ to process sensor data and make real-time decisions for safe parking maneuvers.",
-                results: "The Self-Parking System demonstrated a 95% success rate in test scenarios, significantly reducing the time and stress associated with parking in tight spaces."
-            }
-        }
-    };
-    
-    // Function to add a message to the chat
-    function addMessage(text, isUser = false) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = isUser ? 'message user-message' : 'message ai-message';
-        
-        const time = new Date();
-        const timeString = `${time.getHours()}:${time.getMinutes().toString().padStart(2, '0')}`;
-        
-        messageDiv.innerHTML = `
-            <div class="message-content">
-                <p>${text}</p>
-            </div>
-            <div class="message-time">${timeString}</div>
-        `;
-        
-        chatMessages.appendChild(messageDiv);
-        
-        // Scroll to the bottom of the chat
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-    
-    // Function to show typing indicator
-    function showTypingIndicator() {
-        typingIndicator.style.display = 'block';
-    }
-    
-    // Function to hide typing indicator
-    function hideTypingIndicator() {
-        typingIndicator.style.display = 'none';
-    }
-    
-    // Function to simulate AI response
-    function simulateAIResponse(userMessage) {
-        showTypingIndicator();
-        
-        // Simulate thinking time (1-3 seconds)
-        const thinkingTime = 1000 + Math.random() * 2000;
-        
-        setTimeout(() => {
-            hideTypingIndicator();
-            
-            // Generate a response based on the user's message
-            let response = getAIResponse(userMessage);
-            
-            // Add the AI response to the chat
-            addMessage(response, false);
-        }, thinkingTime);
-    }
-    
-    // Function to generate AI responses based on user input
-    function getAIResponse(userMessage) {
-        // Convert to lowercase for easier matching
-        const message = userMessage.toLowerCase();
-        
-        // Educational Background
-        if (message.includes('education') || message.includes('study') || 
-            message.includes('college') || message.includes('school') || 
-            message.includes('bsc') || message.includes('hsc') || 
-            message.includes('sslc')) {
-            
-            if (message.includes('bsc') || message.includes('college') || message.includes('current')) {
-                return `I'm currently pursuing my ${portfolioInfo.education.bsc.degree} at ${portfolioInfo.education.bsc.institution} (${portfolioInfo.education.bsc.period}) with ${portfolioInfo.education.bsc.percentage} marks. ${portfolioInfo.education.bsc.details}`;
-            } 
-            else if (message.includes('hsc') || message.includes('12th') || message.includes('higher secondary')) {
-                return `I completed my ${portfolioInfo.education.hsc.degree} at ${portfolioInfo.education.hsc.institution} (${portfolioInfo.education.hsc.period}) with ${portfolioInfo.education.hsc.percentage} marks. ${portfolioInfo.education.hsc.details}`;
-            }
-            else if (message.includes('sslc') || message.includes('10th') || message.includes('secondary')) {
-                return `I completed my ${portfolioInfo.education.sslc.degree} at ${portfolioInfo.education.sslc.institution} in ${portfolioInfo.education.sslc.period} with ${portfolioInfo.education.sslc.percentage} marks. ${portfolioInfo.education.sslc.details}`;
-            }
-            else {
-                return `My educational journey includes:\n\n1. ${portfolioInfo.education.bsc.degree} at ${portfolioInfo.education.bsc.institution} (${portfolioInfo.education.bsc.period}) - ${portfolioInfo.education.bsc.percentage}\n\n2. ${portfolioInfo.education.hsc.degree} at ${portfolioInfo.education.hsc.institution} (${portfolioInfo.education.hsc.period}) - ${portfolioInfo.education.hsc.percentage}\n\n3. ${portfolioInfo.education.sslc.degree} at ${portfolioInfo.education.sslc.institution} (${portfolioInfo.education.sslc.period}) - ${portfolioInfo.education.sslc.percentage}\n\nWould you like to know more about any specific part of my education?`;
-            }
-        }
-        
-        // Skills Information
-        else if (message.includes('skill') || message.includes('proficiency') || 
-                message.includes('experience') || message.includes('know') || 
-                message.includes('expert')) {
-            
-            if (message.includes('c programming') || (message.includes('c') && !message.includes('c++') && !message.includes('core'))) {
-                return `I have ${portfolioInfo.skills.c.level} proficiency (${portfolioInfo.skills.c.proficiency}) in C Programming. ${portfolioInfo.skills.c.description}`;
-            }
-            else if (message.includes('c++') || message.includes('cpp')) {
-                return `I have ${portfolioInfo.skills.cpp.level} proficiency (${portfolioInfo.skills.cpp.proficiency}) in C++. ${portfolioInfo.skills.cpp.description}`;
-            }
-            else if (message.includes('core java')) {
-                return `I have ${portfolioInfo.skills.coreJava.level} proficiency (${portfolioInfo.skills.coreJava.proficiency}) in Core Java. ${portfolioInfo.skills.coreJava.description}`;
-            }
-            else if (message.includes('java') && !message.includes('core java')) {
-                return `I have ${portfolioInfo.skills.java.level} proficiency (${portfolioInfo.skills.java.proficiency}) in Java. ${portfolioInfo.skills.java.description}`;
-            }
-            else if (message.includes('full stack') || message.includes('fullstack') || message.includes('full-stack')) {
-                let frontEndTechs = portfolioInfo.skills.fullStack.frontEnd.join(', ');
-                let backEndTechs = portfolioInfo.skills.fullStack.backEnd.join(', ');
-                let dbTechs = portfolioInfo.skills.fullStack.database.join(', ');
-                
-                return `I have ${portfolioInfo.skills.fullStack.level} proficiency (${portfolioInfo.skills.fullStack.proficiency}) in Full Stack Development. ${portfolioInfo.skills.fullStack.description}\n\n• Front-End: ${frontEndTechs}\n• Back-End: ${backEndTechs}\n• Databases: ${dbTechs}\n• DevOps: ${portfolioInfo.skills.fullStack.devOps.join(', ')}`;
-            }
-            else if (message.includes('python')) {
-                return `I have ${portfolioInfo.skills.python.level} proficiency (${portfolioInfo.skills.python.proficiency}) in Python. ${portfolioInfo.skills.python.description}`;
-            }
-            else if (message.includes('react')) {
-                return `I have ${portfolioInfo.skills.react.level} proficiency (${portfolioInfo.skills.react.proficiency}) in React. ${portfolioInfo.skills.react.description}`;
-            }
-            else {
-                // General skills overview
-                return `My key skills include:\n\n• C Programming (${portfolioInfo.skills.c.proficiency}) - ${portfolioInfo.skills.c.level}\n• C++ (${portfolioInfo.skills.cpp.proficiency}) - ${portfolioInfo.skills.cpp.level}\n• Java (${portfolioInfo.skills.java.proficiency}) - ${portfolioInfo.skills.java.level}\n• Core Java (${portfolioInfo.skills.coreJava.proficiency}) - ${portfolioInfo.skills.coreJava.level}\n• Full Stack Development (${portfolioInfo.skills.fullStack.proficiency}) - ${portfolioInfo.skills.fullStack.level}\n\nI also have some experience with Python (${portfolioInfo.skills.python.proficiency}) and React (${portfolioInfo.skills.react.proficiency}).\n\nWould you like more details about any of these skills?`;
-            }
-        }
-        
-        // Project Information
-        else if (message.includes('project') || message.includes('work') || 
-                message.includes('portfolio') || message.includes('created') ||
-                message.includes('developed') || message.includes('built') ||
-                message.includes('parking')) {
-            
-            if (message.includes('parking') || message.includes('self-parking') || message.includes('self parking')) {
-                let techsUsed = portfolioInfo.projects.selfParking.technologies.join(', ');
-                let featuresText = portfolioInfo.projects.selfParking.features.map(feature => `• ${feature}`).join('\n');
-                
-                return `The ${portfolioInfo.projects.selfParking.name} is one of my main projects. ${portfolioInfo.projects.selfParking.description}\n\nTechnologies used: ${techsUsed}\n\nKey features:\n${featuresText}\n\n${portfolioInfo.projects.selfParking.results}`;
-            }
-            else {
-                return `My main project is the ${portfolioInfo.projects.selfParking.name} - ${portfolioInfo.projects.selfParking.description}\n\nIt uses ${portfolioInfo.projects.selfParking.technologies.join(', ')} and achieved a 95% success rate in test scenarios.\n\nWould you like to know more specific details about this project?`;
-            }
-        }
-        
-        // Introduction/Personal Information
-        else if (message.includes('hello') || message.includes('hi') || 
-                message.includes('hey') || message.includes('greetings') || 
-                message.includes('introduce') || message.includes('who are you') || 
-                message.includes('about you')) {
-            
-            return `Hello! I'm Monesh AI Assistant, representing Moneshwar S S, a Software Engineer. I'm here to tell you about Moneshwar's skills in C, C++, Java, Core Java, and his experience as a fresh graduate pursuing a BSc in Computer Science at SSM College of Arts and Science with 77.7% marks. Moneshwar has worked on a Self-Parking System project. Feel free to ask me about his education, skills, or project!`;
-        }
-        
-        // Contact Information
-        else if (message.includes('contact') || message.includes('email') || 
-                message.includes('phone') || message.includes('reach') || 
-                message.includes('hire') || message.includes('job')) {
-            
-            return `You can contact me through the Contact section of this portfolio website. I'm always open to new opportunities, collaborations, and interesting projects. Feel free to reach out if you'd like to discuss potential work or just connect professionally!`;
-        }
-        
-        // Thank you responses
-        else if (message.includes('thank') || message.includes('thanks') || 
-                message.includes('appreciate') || message.includes('helpful')) {
-            
-            return `You're welcome! I'm glad I could help. Feel free to ask if you have any other questions about my skills, education, projects, or anything else related to my portfolio.`;
-        }
-        
-        // When user asks for technologies or tech stack
-        else if (message.includes('tech') || message.includes('stack') || 
-                message.includes('framework') || message.includes('language')) {
-            
-            return `I'm experienced with various technologies including:\n\n• Programming Languages: C (90%), C++ (85%), Java (95%)\n• Front-End: HTML5, CSS3, JavaScript, React (70%), Angular\n• Back-End: Spring Boot, Node.js, Express, Servlets, JSP\n• Databases: MySQL, MongoDB, PostgreSQL, Oracle\n• DevOps: Git, Docker, Jenkins, AWS\n\nIs there a specific technology you'd like to know more about?`;
-        }
-        
-        // Default responses for unknown queries
-        else {
-            const defaultResponses = [
-                "That's an interesting question! Could you please be more specific? I can tell you about my education, skills, or projects.",
-                "I'm not sure I understand. Would you like to know about my education, skills, or the projects I've worked on?",
-                "I'd be happy to help, but could you rephrase your question? I can provide information about my technical background, educational journey, or project experience.",
-                "Thanks for your interest! I can tell you about my skills in C, C++, Java, Full Stack development, or my Self-Parking project. What would you like to know?",
-                "I'm designed to tell you about my portfolio. Feel free to ask about my education at SSM College, my programming skills, or my Self-Parking System project!"
-            ];
-            
-            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
-        }
-    }
-    
-    // Enhanced event listener for the send button with debug logs
-    sendButton.addEventListener('click', () => {
-        const message = chatInput.value.trim();
-        console.log('Send button clicked, message:', message); // Debug log
-        
-        if (message !== '') {
-            // Add the user's message to the chat
-            addMessage(message, true);
-            console.log('User message added to chat'); // Debug log
-            
-            // Clear input field
-            chatInput.value = '';
-            
-            // Simulate AI response
-            simulateAIResponse(message);
-        }
-    });
-    
-    // Event listener for the Enter key in the input field
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            console.log('Enter key pressed'); // Debug log
-            sendButton.click();
-        }
-    });
-    
-    // Event listener for the clear chat button
-    clearChatButton.addEventListener('click', () => {
-        // Keep just the first welcome message
-        const welcomeMessage = chatMessages.firstElementChild;
-        chatMessages.innerHTML = '';
-        chatMessages.appendChild(welcomeMessage);
-    });
-    
-    // Event listener for the toggle suggestions button
-    toggleSuggestionsButton.addEventListener('click', () => {
-        suggestedQuestions.classList.toggle('show-suggestions');
-    });
-    
-    // Event listeners for suggestion buttons
-    suggestionButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const question = button.textContent;
-            
-            // Add the suggested question as a user message
-            addMessage(question, true);
-            
-            // Simulate AI response
-            simulateAIResponse(question);
-            
-            // Hide suggestions after clicking
-            suggestedQuestions.classList.remove('show-suggestions');
-        });
-    });
-    
-    // Make sure the chat elements are visible
-    if (chatMessages.parentElement) {
-        chatMessages.parentElement.style.display = 'flex';
-    }
-    
-    // Focus the input field when the page loads
-    chatInput.focus();
-    
-    // Add a test message to verify functionality on load
-    console.log('Chat functionality loaded and ready');
-});
+<!DOCTYPE html>
+<html lang="en">
 
-// Add this at the beginning of your script.js file
-function testChatFunctionality() {
-    const chatMessages = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input');
-    const sendButton = document.getElementById('send-message');
-    
-    if (!chatMessages || !chatInput || !sendButton) {
-        console.error('Chat elements not found in test function!');
-        return;
-    }
-    
-    // Add a test function to the window object so you can call it from browser console
-    window.sendTestMessage = function(message) {
-        if (!message) message = "This is a test message";
-        
-        // Create user message
-        const userMessageDiv = document.createElement('div');
-        userMessageDiv.className = 'message user-message';
-        
-        const time = new Date();
-        const timeString = `${time.getHours()}:${time.getMinutes().toString().padStart(2, '0')}`;
-        
-        userMessageDiv.innerHTML = `
-            <div class="message-content">
-                <p>${message}</p>
-            </div>
-            <div class="message-time">${timeString}</div>
-        `;
-        
-        chatMessages.appendChild(userMessageDiv);
-        
-        // Create AI response after 1 second
-        setTimeout(() => {
-            const aiMessageDiv = document.createElement('div');
-            aiMessageDiv.className = 'message ai-message';
-            
-            aiMessageDiv.innerHTML = `
-                <div class="message-content">
-                    <p>This is a test response to: "${message}"</p>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Software Engineer Portfolio">
+    <title>Monesh's Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+    <div class="stars" id="stars"></div>
+
+    <!-- Animated Spaceship -->
+    <div class="spaceship-container" id="spaceship-container">
+        <div class="spaceship" id="spaceship">
+            <i class="fas fa-rocket"></i>
+            <div class="engine-glow"></div>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header>
+        <nav>
+            <a href="#home" class="logo">Monesh's Portfolio</a>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#education">Education</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#ai">Monesh's AI</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home">
+            <div class="hero-container">
+                <div class="hero-content">
+                    <div class="hero-text">
+                        <h1>Explore My Universe</h1>
+                        <h3>Moneshwar S S</h3>
+                        <h4>Web Developer</h4>
+                        <p>A passionate developer skilled in HTML & CSS, JavaScript, Advanced Java, Spring, MySQL, and
+                            Hibernate. Creating efficient solutions through code, I'm embarking on a journey to make
+                            complex software simple and enjoyable to use.</p>
+                        <div class="hero-buttons">
+                            <a href="#projects" class="cta-button">View Project</a>
+                            <a href="#contact" class="cta-button secondary">Contact Me</a>
+                        </div>
+                    </div>
                 </div>
-                <div class="message-time">${timeString}</div>
-            `;
-            
-            chatMessages.appendChild(aiMessageDiv);
-            
-            // Scroll to the bottom of the chat
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 1000);
-        
-        // Scroll to the bottom of the chat
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    };
-    
-    console.log('Test chat functionality ready. Call window.sendTestMessage() in console to test.');
-}
+                <div class="scroll-indicator">
+                    <span>Scroll Down</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </section>
 
-// Call the test function on page load
-document.addEventListener('DOMContentLoaded', function() {
-    testChatFunctionality();
-    // Rest of your existing code...
-});
+        <!-- About Section -->
+        <section id="about">
+            <h2>About</h2>
+            <div class="about-container">
+                <div class="about-content">
+                    <div class="cosmic-card animate-fadeIn">
+                        <h3>Mission Brief</h3>
+                        <p>Greetings, cosmic visitor! I'm <span class="highlight">Moneshwar S S</span>, a <span
+                                class="highlight">Web Developer</span> exploring the digital universe. With a passion
+                            for creating elegant web solutions, I navigate through code like a starship captain charting
+                            unknown territories.</p>
 
-// Contact Form Functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const contactForm = document.getElementById('contact-form');
-    const formSuccess = document.getElementById('form-success');
-    
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get form values
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const subject = document.getElementById('subject').value;
-            const message = document.getElementById('message').value;
-            
-            // Here you would typically send the form data to a server
-            // For now, we'll simulate a successful submission
-            
-            // Simulate sending (2 second delay)
-            contactForm.classList.add('sending');
-            
-            setTimeout(() => {
-                // Hide the form and show success message
-                contactForm.style.display = 'none';
-                formSuccess.classList.add('show-success');
-                
-                // Reset form
-                contactForm.reset();
-                
-                // Optionally, reset the form and hide success message after some time
-                setTimeout(() => {
-                    formSuccess.classList.remove('show-success');
-                    contactForm.style.display = 'flex';
-                    contactForm.classList.remove('sending');
-                }, 5000);
-            }, 2000);
-            
-            // In a real implementation, you would use fetch or XMLHttpRequest to send the data
-            /*
-            fetch('your-form-handler-url', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: name,
-                    email: email,
-                    subject: subject,
-                    message: message
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                contactForm.style.display = 'none';
-                formSuccess.classList.add('show-success');
-                contactForm.reset();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Handle error state
+                        <p>As a graduate with a strong foundation in programming languages and modern web technologies,
+                            I'm excited to apply my skills in real-world projects and continue learning and growing in
+                            the tech industry.</p>
+                    </div>
+
+                    <div class="cosmic-stats">
+                        <div class="stat-item">
+                            <div class="stat-value"><span>BSc</span></div>
+                            <div class="stat-label">Computer Science</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value"><span>1</span>+</div>
+                            <div class="stat-label">Projects Completed</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value"><a href="#projects" class="project-link"><i
+                                        class="fas fa-rocket"></i></a></div>
+                            <div class="stat-label">View Project</div>
+                        </div>
+                    </div>
+
+                    <div class="cosmic-card animate-fadeIn">
+                        <h3>Technical Expertise</h3>
+                        <div class="skills-overview">
+                            <div class="skill-category">
+                                <h4><i class="fas fa-code"></i> Front-End Development</h4>
+                                <p>Proficient in creating responsive and interactive user interfaces using HTML5, CSS3,
+                                    and JavaScript. Experienced in building modern web applications with a focus on user
+                                    experience and accessibility.</p>
+                            </div>
+
+                            <div class="skill-category">
+                                <h4><i class="fas fa-server"></i> Back-End Development</h4>
+                                <p>Skilled in Advanced Java programming with expertise in object-oriented design,
+                                    multi-threading, and collections. Experienced with Spring Framework for building
+                                    robust enterprise applications.</p>
+                            </div>
+
+                            <div class="skill-category">
+                                <h4><i class="fas fa-database"></i> Database Management</h4>
+                                <p>Proficient in MySQL database design, query optimization, and data management.
+                                    Experienced with complex queries, stored procedures, and database administration.
+                                </p>
+                            </div>
+
+                            <div class="skill-category">
+                                <h4><i class="fas fa-network-wired"></i> Networking</h4>
+                                <p>Knowledge of Hibernate networking protocols, configuration, and optimization.
+                                    Familiar with network architecture, security implementations, and performance
+                                    tuning.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cosmic-card animate-fadeIn">
+                        <h3>Mission Objectives</h3>
+                        <ul class="mission-list">
+                            <li><i class="fas fa-meteor"></i> Crafting scalable and maintainable code that stands the
+                                test of time</li>
+                            <li><i class="fas fa-robot"></i> Exploring emerging technologies and pushing the boundaries
+                                of what's possible</li>
+                            <li><i class="fas fa-satellite"></i> Building intuitive user experiences that feel like
+                                second nature</li>
+                            <li><i class="fas fa-rocket"></i> Constantly expanding my knowledge universe through
+                                continuous learning</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section id="skills">
+            <h2>Skills</h2>
+            <div class="skills-container">
+                <div class="skills-intro">
+                    <div class="cosmic-card animate-fadeIn">
+                        <h3>Navigation Systems</h3>
+                        <p>As a developer, I've learned various programming languages and technologies that allow me to
+                            navigate through the universe of software development. Below is a cosmic representation of
+                            my proficiency levels.</p>
+                    </div>
+
+                    <!-- Keeping the skill level legend -->
+                    <div class="skill-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="--color: var(--beginner-color)"></div>
+                            <span>Basic Knowledge (30-50%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="--color: var(--intermediate-color)"></div>
+                            <span>Intermediate (51-75%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="--color: var(--advanced-color)"></div>
+                            <span>Advanced (76-95%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="--color: var(--expert-color)"></div>
+                            <span>Expert (96-100%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="skills-grid">
+                    <!-- Front-End Skills -->
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fab fa-html5"></i><i class="fab fa-css3-alt"></i>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>HTML & CSS</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress expert" style="--percent: 95%;">
+                                    <span class="skill-percent">95%</span>
+                                </div>
+                            </div>
+                            <p>Expert in creating responsive, accessible, and visually appealing web interfaces. Skilled
+                                in modern CSS techniques, animations, and cross-browser compatibility.</p>
+                        </div>
+                    </div>
+
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fab fa-js"></i>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>JavaScript</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress advanced" style="--percent: 85%;">
+                                    <span class="skill-percent">85%</span>
+                                </div>
+                            </div>
+                            <p>Proficient in modern JavaScript (ES6+) with experience in DOM manipulation, asynchronous
+                                programming, and building interactive web applications.</p>
+                        </div>
+                    </div>
+
+                    <!-- Back-End Skills -->
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fab fa-java"></i>
+                            <div class="skill-badge">Advanced</div>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>Advanced Java</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress advanced" style="--percent: 90%;">
+                                    <span class="skill-percent">90%</span>
+                                </div>
+                            </div>
+                            <p>Expert in advanced Java concepts including multi-threading, collections, generics,
+                                annotations, and functional programming. Skilled in building robust enterprise
+                                applications.</p>
+                        </div>
+                    </div>
+
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fab fa-java"></i>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>Core Java</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress advanced" style="--percent: 92%;">
+                                    <span class="skill-percent">92%</span>
+                                </div>
+                            </div>
+                            <p>Proficient in fundamental Java programming concepts including object-oriented principles,
+                                inheritance, polymorphism, exception handling, and Java I/O. Strong foundation in core
+                                Java libraries and APIs.</p>
+                        </div>
+                    </div>
+
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fas fa-leaf"></i>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>Spring</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress advanced" style="--percent: 88%;">
+                                    <span class="skill-percent">88%</span>
+                                </div>
+                            </div>
+                            <p>Proficient in Spring Framework for building enterprise applications. Experienced with
+                                dependency injection, Spring MVC, Spring Security, and integration with various
+                                databases.</p>
+                        </div>
+                    </div>
+
+                    <!-- Database Skills -->
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fas fa-database"></i>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>MySQL</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress advanced" style="--percent: 85%;">
+                                    <span class="skill-percent">85%</span>
+                                </div>
+                            </div>
+                            <p>Proficient in database design, query optimization, and data management using MySQL.
+                                Experienced with complex queries, stored procedures, and database administration.</p>
+                        </div>
+                    </div>
+
+                    <!-- PHP Skills -->
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fab fa-php"></i>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>PHP</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress intermediate" style="--percent: 75%;">
+                                    <span class="skill-percent">75%</span>
+                                </div>
+                            </div>
+                            <p>Proficient in server-side scripting with PHP, building dynamic web content and
+                                integrating with databases like MySQL.</p>
+                        </div>
+                    </div>
+
+                    <!-- Bootstrap Skills -->
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fab fa-bootstrap"></i>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>Bootstrap</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress advanced" style="--percent: 85%;">
+                                    <span class="skill-percent">85%</span>
+                                </div>
+                            </div>
+                            <p>Expert in using Bootstrap for responsive, mobile-first web development with custom themes
+                                and components.</p>
+                        </div>
+                    </div>
+
+                    <!-- WordPress Skills -->
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fab fa-wordpress"></i>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>WordPress</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress advanced" style="--percent: 80%;">
+                                    <span class="skill-percent">80%</span>
+                                </div>
+                            </div>
+                            <p>Experienced in WordPress development, including theme customization, plugin integration,
+                                and CMS management.</p>
+                        </div>
+                    </div>
+
+                    <!-- React Skills -->
+                    <div class="skill-item animate-fadeIn">
+                        <div class="skill-icon">
+                            <i class="fab fa-react"></i>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <div class="skill-info">
+                            <h3>React</h3>
+                            <div class="skill-level">
+                                <div class="skill-progress advanced" style="--percent: 82%;">
+                                    <span class="skill-percent">82%</span>
+                                </div>
+                            </div>
+                            <p>Skilled in building interactive and reusable UI components with React.js, hooks, and
+                                modern front-end workflows.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Stack Detailed View -->
+                <div class="full-stack-details" style="display: none;"></div>
+            </div>
+        </section>
+
+        <!-- Education Section -->
+        <section id="education">
+            <h2>Education</h2>
+            <div class="education-container">
+                <div class="timeline-intro">
+                    <div class="cosmic-card animate-fadeIn">
+                        <h3>Academic Journey</h3>
+                        <p>My educational voyage through the cosmos of knowledge, from school to college, has equipped
+                            me with the foundations needed to navigate the complexities of software development.</p>
+                    </div>
+                </div>
+
+                <div class="timeline">
+                    <div class="timeline-line"></div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-date">2022 - 2025</div>
+                        <div class="timeline-content">
+                            <div class="cosmic-card animate-fadeIn">
+                                <h3>BSc Computer Science</h3>
+                                <h4>SSM College of Arts and Science</h4>
+                                <div class="edu-progress">
+                                    <div class="edu-bar" style="--percent: 77.7%;">
+                                        <span class="edu-percent">77.7%</span>
+                                    </div>
+                                </div>
+                                <p>Successfully completed my Bachelor's degree with a focus on computer science
+                                    fundamentals, programming languages, and modern web application development.</p>
+                                <div class="timeline-badge">Completed</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HSC (12th) -->
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-date">2020 - 2022</div>
+                        <div class="timeline-content">
+                            <div class="cosmic-card animate-fadeIn">
+                                <h3>Higher Secondary Certificate (HSC)</h3>
+                                <h4>Equitas Gurukul Matric Higher Secondary School</h4>
+                                <div class="edu-progress">
+                                    <div class="edu-bar" style="--percent: 73.3%;">
+                                        <span class="edu-percent">73.3%</span>
+                                    </div>
+                                </div>
+                                <p>Completed my higher secondary education with a focus on mathematics and computer
+                                    science, building a strong foundation for my programming journey.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SSLC (10th) -->
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-date">2020</div>
+                        <div class="timeline-content">
+                            <div class="cosmic-card animate-fadeIn">
+                                <h3>Secondary School Leaving Certificate (SSLC)</h3>
+                                <h4>MSP Solai Nadar Memorial Higher Secondary School</h4>
+                                <div class="edu-progress">
+                                    <div class="edu-bar" style="--percent: 73.2%;">
+                                        <span class="edu-percent">73.2%</span>
+                                    </div>
+                                </div>
+                                <p>Completed my secondary education with a well-rounded curriculum that sparked my
+                                    interest in technology and logical problem-solving.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects">
+            <h2>Projects</h2>
+            <div class="projects-container">
+                <div class="projects-intro">
+                    <div class="cosmic-card animate-fadeIn">
+                        <h3>Stellar Creations</h3>
+                        <p>Each project represents a star in my development universe, showcasing my ability to transform
+                            ideas into functional, elegant solutions. Here are some of the cosmic creations I've
+                            launched.</p>
+                    </div>
+                </div>
+
+                <div class="projects-grid">
+                    <!-- Food Delivery App Card -->
+                    <div class="project-card animate-fadeIn">
+                        <div class="project-content">
+                            <h3>Food Delivery App</h3>
+                            <div class="project-tags">
+                                <span>Java</span>
+                                <span>Spring Boot</span>
+                                <span>MySQL</span>
+                            </div>
+                            <p>Full-stack food delivery platform. Features: user authentication, restaurant browsing,
+                                and real-time order tracking.</p>
+                            <a href="https://www.linkedin.com/posts/moneshwar-s-s-066441334_hardworkpaysoff-fullstackdeveloper-javadeveloper-activity-7359847704216104961-087o?utm_source=share&utm_medium=member_desktop&rcm=ACoAAFQR-w4Bb10SMnPKmC2wN18Jl4khzpLzIbM"
+                                target="_blank" class="project-details-btn">
+                                View Project <i class="fab fa-linkedin"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Netflix Clone Card -->
+                    <div class="project-card animate-fadeIn">
+                        <div class="project-content">
+                            <h3>Netflix Clone</h3>
+                            <div class="project-tags">
+                                <span>React</span>
+                                <span>Firebase</span>
+                                <span>TMDB API</span>
+                            </div>
+                            <p>High-fidelity Netflix UI with dynamic content fetching from TMDB API and Firebase
+                                integration.</p>
+                            <a href="https://lnkd.in/gRFqWyGF" target="_blank" class="project-details-btn">
+                                View Project <i class="fab fa-linkedin"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Self-Parking Project -->
+                    <div class="project-card animate-fadeIn">
+                        <div class="project-content">
+                            <h3>Self-Parking System</h3>
+                            <div class="project-tags">
+                                <span>Automation</span>
+                                <span>Embedded Systems</span>
+                                <span>Sensors</span>
+                            </div>
+                            <p>A smart parking solution that uses sensors and actuators to automatically park vehicles
+                                with precision and safety, reducing human error.</p>
+                            <button class="project-details-btn" data-project="self-parking">
+                                Explore Project <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Modal for Self-Parking Project -->
+                <div class="project-modal" id="self-parking-modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Self-Parking System</h2>
+                            <button class="close-modal"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="modal-details">
+                                <div class="modal-section">
+                                    <h3><i class="fas fa-rocket"></i> Project Overview</h3>
+                                    <p>The Self-Parking System is an innovative solution designed to automate the
+                                        parking process of vehicles. Using a combination of sensors, motors, and
+                                        intelligent algorithms, the system can detect parking spaces and navigate into
+                                        them safely and efficiently.</p>
+                                </div>
+
+                                <div class="modal-section">
+                                    <h3><i class="fas fa-cogs"></i> Technologies Used</h3>
+                                    <div class="tech-list modal-tech-list">
+                                        <span class="tech-badge">Arduino</span>
+                                        <span class="tech-badge">Ultrasonic Sensors</span>
+                                        <span class="tech-badge">Servo Motors</span>
+                                        <span class="tech-badge">C/C++</span>
+                                        <span class="tech-badge">Embedded Systems</span>
+                                    </div>
+                                </div>
+
+                                <div class="modal-section">
+                                    <h3><i class="fas fa-lightbulb"></i> Key Features</h3>
+                                    <ul class="feature-list">
+                                        <li>Real-time obstacle detection and avoidance</li>
+                                        <li>Automated parallel and perpendicular parking capability</li>
+                                        <li>Distance measurement with high precision</li>
+                                        <li>Intelligent path planning algorithm</li>
+                                        <li>Safety mechanisms to prevent collisions</li>
+                                    </ul>
+                                </div>
+
+                                <div class="modal-section">
+                                    <h3><i class="fas fa-code"></i> Implementation</h3>
+                                    <p>The system was implemented using Arduino as the main controller, with ultrasonic
+                                        sensors for distance measurement, and servo motors for controlling the vehicle's
+                                        movement. The algorithms were written in C/C++ to process sensor data and make
+                                        real-time decisions for safe parking maneuvers.</p>
+                                </div>
+
+                                <div class="modal-section">
+                                    <h3><i class="fas fa-chart-line"></i> Results & Impact</h3>
+                                    <p>The Self-Parking System demonstrated a 95% success rate in test scenarios,
+                                        significantly reducing the time and stress associated with parking in tight
+                                        spaces. The project showcases my ability to integrate hardware and software
+                                        components to solve real-world problems.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <a href="#" class="modal-btn"><i class="fab fa-github"></i> View Code</a>
+                            <a href="#" class="modal-btn"><i class="fas fa-video"></i> Watch Demo</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hero's AI Section -->
+        <section id="ai">
+            <h2>Hero's AI</h2>
+            <div class="ai-container">
+                <div class="ai-intro">
+                    <div class="cosmic-card animate-fadeIn">
+                        <h3>AI Communication Portal</h3>
+                        <p>Welcome to my AI assistant interface. Feel free to ask questions about my project, skills, or
+                            just chat about technology!</p>
+                    </div>
+                </div>
+
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <div class="ai-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="ai-info">
+                            <h3>Monesh's AI</h3>
+                            <span class="ai-status online">Online</span>
+                        </div>
+                        <div class="chat-controls">
+                            <button class="chat-control-btn" id="clear-chat" title="Clear Chat">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            <button class="chat-control-btn" id="toggle-suggestions" title="Show Suggestions">
+                                <i class="fas fa-lightbulb"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chat-messages">
+                        <!-- Messages will be added here dynamically -->
+                        <div class="message ai-message">
+                            <div class="message-content">
+                                <p>Hello, I'm Monesh's AI! How can I help you explore this portfolio?</p>
+                            </div>
+                            <div class="message-time">Just now</div>
+                        </div>
+                    </div>
+
+                    <div class="suggested-questions" id="suggested-questions">
+                        <p class="suggestions-title">Suggested Questions:</p>
+                        <div class="suggestion-btns">
+                            <button class="suggestion-btn">What are your programming skills?</button>
+                            <button class="suggestion-btn">Tell me about your Self-Parking project</button>
+                            <button class="suggestion-btn">What's your educational background?</button>
+                            <button class="suggestion-btn">What Full Stack technologies do you use?</button>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <input type="text" id="chat-input" placeholder="Type your message here..." class="chat-input">
+                        <button id="send-message" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+
+                    <div class="typing-indicator" id="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact">
+            <h2>Contact Me</h2>
+            <div class="contact-container">
+                <div class="contact-intro">
+                    <div class="cosmic-card animate-fadeIn">
+                        <h3>Contact Me</h3>
+                        <p>I'm interested in new opportunities and collaborations. Feel free to reach out if you'd like
+                            to connect!</p>
+                    </div>
+                </div>
+
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <div class="cosmic-card contact-card animate-fadeIn">
+                            <div class="contact-profile">
+                                <div class="contact-avatar">
+                                    <img src="profile-photo.jpg" alt="Moneshwar S S">
+                                    <div class="avatar-glow"></div>
+                                </div>
+                                <div class="contact-name">
+                                    <h3>Moneshwar S S</h3>
+                                    <p>Web Developer</p>
+                                </div>
+                            </div>
+
+                            <div class="contact-details">
+                                <div class="contact-item animate-fadeIn">
+                                    <div class="contact-icon">
+                                        <i class="fas fa-envelope"></i>
+                                    </div>
+                                    <div class="contact-text">
+                                        <h4>Email</h4>
+                                        <a href="mailto:moneshwar2005@gmail.com">moneshwar2005@gmail.com</a>
+                                    </div>
+                                </div>
+
+                                <div class="contact-item animate-fadeIn">
+                                    <div class="contact-icon linkedin-icon" title="Connect on LinkedIn">
+                                        <i class="fab fa-linkedin"></i>
+                                    </div>
+                                    <div class="contact-text">
+                                        <h4>LinkedIn</h4>
+                                        <a href="https://www.linkedin.com/in/moneshwar-s-s-066441334?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+                                            target="_blank">Moneshwar S S</a>
+                                    </div>
+                                </div>
+
+                                <div class="contact-item animate-fadeIn">
+                                    <div class="contact-icon github-icon" title="View GitHub Profile">
+                                        <i class="fab fa-github"></i>
+                                    </div>
+                                    <div class="contact-text">
+                                        <h4>GitHub</h4>
+                                        <a href="https://github.com/Moneshwar-2005" target="_blank">@Moneshwar-2005</a>
+                                    </div>
+                                </div>
+
+                                <div class="contact-item animate-fadeIn">
+                                    <div class="contact-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div class="contact-text">
+                                        <h4>Location</h4>
+                                        <p>Tamil Nadu, India</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="contact-form-container">
+                        <div class="cosmic-card contact-card animate-fadeIn">
+                            <h3><i class="fas fa-satellite-dish"></i> Send Transmission</h3>
+                            <form id="contact-form" class="contact-form">
+                                <div class="form-group">
+                                    <label for="name">Your Name</label>
+                                    <div class="input-container">
+                                        <i class="fas fa-user"></i>
+                                        <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="email">Your Email</label>
+                                    <div class="input-container">
+                                        <i class="fas fa-envelope"></i>
+                                        <input type="email" id="email" name="email" placeholder="Enter your email"
+                                            required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="subject">Subject</label>
+                                    <div class="input-container">
+                                        <i class="fas fa-heading"></i>
+                                        <input type="text" id="subject" name="subject"
+                                            placeholder="Enter message subject" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="message">Message</label>
+                                    <div class="input-container textarea-container">
+                                        <i class="fas fa-comment-alt"></i>
+                                        <textarea id="message" name="message" placeholder="Type your message here..."
+                                            required></textarea>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="submit-btn">
+                                    <span>Send Message</span>
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
+                            <div id="form-success" class="form-success">
+                                <i class="fas fa-check-circle"></i>
+                                <p>Your message has been sent successfully!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="social-links">
+                <a href="https://www.linkedin.com/in/moneshwar-s-s-066441334?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+                    target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/Moneshwar-2005" target="_blank"><i class="fab fa-github"></i></a>
+            </div>
+            <p>&copy; 2025 Moneshwar S S. All rights reserved across the universe.</p>
+        </div>
+    </footer>
+
+    <a href="#home" class="back-to-top">
+        <i class="fas fa-rocket"></i>
+    </a>
+
+    <script>
+        // Scroll header effect
+        window.addEventListener('scroll', function () {
+            const header = document.querySelector('header');
+            const backToTop = document.querySelector('.back-to-top');
+
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+                backToTop.classList.add('visible');
+            } else {
+                header.classList.remove('scrolled');
+                backToTop.classList.remove('visible');
+            }
+
+            // Update side navigation active state
+            updateSideNav();
+        });
+
+        function updateSideNav() {
+            // Get all sections and side nav links
+            const sections = document.querySelectorAll('section');
+            const sideNavLinks = document.querySelectorAll('.side-nav a');
+
+            // Get current scroll position
+            const scrollY = window.pageYOffset;
+
+            // Find current section
+            sections.forEach((section, index) => {
+                const sectionTop = section.offsetTop - 150;
+                const sectionHeight = section.offsetHeight;
+                const sectionId = section.getAttribute('id');
+
+                if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                    // Remove active class from all links
+                    sideNavLinks.forEach(link => link.classList.remove('active'));
+
+                    // Add active class to corresponding link
+                    document.querySelector(`.side-nav a[href="#${sectionId}"]`).classList.add('active');
+                }
             });
-            */
-        });
-    }
-});
-
-// Update side navigation active state
-function updateSideNav() {
-    // Get all sections and side nav links
-    const sections = document.querySelectorAll('section');
-    const sideNavLinks = document.querySelectorAll('.side-nav a');
-    
-    // Get current scroll position
-    const scrollY = window.pageYOffset;
-    
-    // Find current section
-    sections.forEach((section, index) => {
-        const sectionTop = section.offsetTop - 150;
-        const sectionHeight = section.offsetHeight;
-        const sectionId = section.getAttribute('id');
-        
-        if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
-            // Remove active class from all links
-            sideNavLinks.forEach(link => link.classList.remove('active'));
-            
-            // Add active class to corresponding link
-            document.querySelector(`.side-nav a[href="#${sectionId}"]`).classList.add('active');
         }
-    });
-}
 
-// Initialize side nav active state on page load
-document.addEventListener('DOMContentLoaded', function() {
-    createGalaxy();
-    // Remove: updateSideNav();
-});
-
-// Update side nav on scroll
-window.addEventListener('scroll', function() {
-    const header = document.querySelector('header');
-    const backToTop = document.querySelector('.back-to-top');
-    
-    if (window.scrollY > 100) {
-        header.classList.add('scrolled');
-        backToTop.classList.add('visible');
-    } else {
-        header.classList.remove('scrolled');
-        backToTop.classList.remove('visible');
-    }
-});
-
-// Scroll to top when page loads
-window.addEventListener('load', function() {
-    // Scroll to the top of the page
-    window.scrollTo(0, 0);
-    
-    // Also update the active state in the navigation
-    const homeLink = document.querySelector('nav ul li a[href="#home"]');
-    if (homeLink) {
-        // Remove active class from all links
-        document.querySelectorAll('nav ul li a').forEach(link => {
-            link.classList.remove('active');
+        // Initialize side nav active state on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            createGalaxy();
+            updateSideNav();
         });
-        
-        // Add active class to home link
-        homeLink.classList.add('active');
-    }
-});
 
-// Scroll-triggered animations
-document.addEventListener('DOMContentLoaded', function() {
-    // Existing code...
-    
-    // Add animation classes to elements when they come into view
-    const animateOnScroll = function() {
-        const elements = document.querySelectorAll('.cosmic-card, .skill-item, .contact-item, .project-card');
-        
-        elements.forEach(element => {
-            const elementPosition = element.getBoundingClientRect().top;
-            const screenPosition = window.innerHeight / 1.3;
-            
-            if (elementPosition < screenPosition) {
-                element.classList.add('animate-fadeIn');
-            }
-        });
-    };
-    
-    // Run on scroll
-    window.addEventListener('scroll', animateOnScroll);
-    
-    // Run once on page load
-    animateOnScroll();
-    
-    // Add parallax effect to stars
-    window.addEventListener('scroll', function() {
-        const stars = document.getElementById('stars');
-        const scrollPosition = window.pageYOffset;
-        stars.style.transform = `translateY(${scrollPosition * 0.5}px)`;
-    });
-    
-    // Add typing effect to hero text
-    const heroText = document.querySelector('.hero-text h1');
-    if (heroText) {
-        const text = heroText.innerHTML;
-        heroText.innerHTML = '';
-        
-        let i = 0;
-        const typeWriter = function() {
-            if (i < text.length) {
-                heroText.innerHTML += text.charAt(i);
-                i++;
-                setTimeout(typeWriter, 50);
-            }
+        // Animate elements when they enter the viewport
+        const observerOptions = {
+            threshold: 0.1
         };
-        
-        setTimeout(typeWriter, 500);
-    }
-}); 
+
+        const observer = new IntersectionObserver(function (entries, observer) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-fadeIn');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section:not(#home)').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Enhanced galaxy star creation
+        function createGalaxy() {
+            const starsContainer = document.getElementById('stars');
+            // Clear any existing stars
+            starsContainer.innerHTML = '';
+
+            // Add a nebula background effect
+            const nebula = document.createElement('div');
+            nebula.className = 'nebula';
+            starsContainer.appendChild(nebula);
+
+            // Create galaxy clusters
+            const clusterCount = 5;
+            for (let i = 0; i < clusterCount; i++) {
+                createGalaxyCluster(starsContainer);
+            }
+
+            // Create individual stars
+            const starCount = 200;
+            for (let i = 0; i < starCount; i++) {
+                createStar(starsContainer);
+            }
+
+            // Create occasional shooting stars
+            setInterval(() => {
+                if (Math.random() > 0.7) {
+                    createShootingStar(starsContainer);
+                }
+            }, 2000);
+        }
+
+        function createGalaxyCluster(container) {
+            const cluster = document.createElement('div');
+            cluster.className = 'galaxy-cluster';
+
+            // Random position
+            const x = Math.random() * 100;
+            const y = Math.random() * 100;
+
+            // Random size (bigger for clusters)
+            const size = 100 + Math.random() * 200;
+
+            // Random color for the cluster
+            const colors = [
+                '142, 68, 173',  // Purple
+                '41, 128, 185',  // Blue
+                '26, 188, 156',  // Turquoise
+                '231, 76, 60',   // Red
+                '241, 196, 15'   // Yellow
+            ];
+            const colorIndex = Math.floor(Math.random() * colors.length);
+
+            // Random duration and opacity
+            const duration = 10 + Math.random() * 20;
+            const opacity = 0.2 + Math.random() * 0.3;
+
+            cluster.style.left = `${x}%`;
+            cluster.style.top = `${y}%`;
+            cluster.style.width = `${size}px`;
+            cluster.style.height = `${size}px`;
+            cluster.style.setProperty('--cluster-color-rgb', colors[colorIndex]);
+            cluster.style.setProperty('--cluster-duration', `${duration}s`);
+            cluster.style.setProperty('--cluster-opacity', opacity);
+
+            container.appendChild(cluster);
+
+            // Add stars to the cluster (denser in the center)
+            const clusterStarCount = 20 + Math.floor(Math.random() * 30);
+            for (let i = 0; i < clusterStarCount; i++) {
+                createClusterStar(cluster, colors[colorIndex]);
+            }
+        }
+
+        function createClusterStar(cluster, colorRgb) {
+            const star = document.createElement('div');
+            star.className = 'star';
+
+            // Position stars with a bias toward the center of the cluster
+            const angle = Math.random() * Math.PI * 2;
+            const distanceFromCenter = Math.pow(Math.random(), 2) * 50; // Squared to bias toward center
+            const x = 50 + Math.cos(angle) * distanceFromCenter;
+            const y = 50 + Math.sin(angle) * distanceFromCenter;
+
+            // Random size with some bigger stars
+            const size = (Math.random() < 0.8 ? 1 : 2) + Math.random() * 2;
+
+            // Use the cluster's color with variation
+            const r = parseInt(colorRgb.split(',')[0]) + (Math.random() * 30 - 15);
+            const g = parseInt(colorRgb.split(',')[1]) + (Math.random() * 30 - 15);
+            const b = parseInt(colorRgb.split(',')[2]) + (Math.random() * 30 - 15);
+            const color = `rgb(${r}, ${g}, ${b})`;
+
+            // Random duration and opacity for twinkling
+            const duration = 2 + Math.random() * 4;
+            const opacity = 0.5 + Math.random() * 0.5;
+
+            star.style.left = `${x}%`;
+            star.style.top = `${y}%`;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.backgroundColor = color;
+            star.style.setProperty('--star-color', color);
+            star.style.setProperty('--duration', `${duration}s`);
+            star.style.setProperty('--opacity', opacity);
+            star.style.setProperty('--glow-size', `${size * 2}px`);
+
+            // Add slight movement to each star
+            const floatX = (Math.random() - 0.5) * 10;
+            const floatY = (Math.random() - 0.5) * 10;
+            star.style.setProperty('--float-x', `${floatX}px`);
+            star.style.setProperty('--float-y', `${floatY}px`);
+            star.style.animation = `twinkle ${duration}s infinite ease-in-out, starFloat ${duration * 3}s infinite ease-in-out`;
+
+            cluster.appendChild(star);
+        }
+
+        function createStar(container) {
+            const star = document.createElement('div');
+            star.className = 'star';
+
+            // Random position
+            const x = Math.random() * 100;
+            const y = Math.random() * 100;
+
+            // Random size
+            const size = Math.random() * 2;
+
+            // Random color for the star
+            const colors = [
+                '#ffffff', // White
+                '#f9f3d5', // Yellow-white
+                '#d6ebff', // Blue-white
+                '#ffd6d6', // Red-white
+                '#e8d6ff'  // Purple-white
+            ];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            // Random duration and opacity for twinkling
+            const duration = 3 + Math.random() * 5;
+            const opacity = 0.2 + Math.random() * 0.5;
+
+            star.style.left = `${x}%`;
+            star.style.top = `${y}%`;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.backgroundColor = color;
+            star.style.setProperty('--star-color', color);
+            star.style.setProperty('--duration', `${duration}s`);
+            star.style.setProperty('--opacity', opacity);
+            star.style.setProperty('--glow-size', `${size * 2}px`);
+
+            container.appendChild(star);
+        }
+
+        function createShootingStar(container) {
+            const shootingStar = document.createElement('div');
+            shootingStar.className = 'star';
+
+            // Random starting position
+            const x = Math.random() * 100;
+            const y = Math.random() * 100;
+
+            // Random angle
+            const angle = Math.random() * 360;
+
+            // Distance to travel
+            const distance = 100 + Math.random() * 200;
+            const distanceX = Math.cos(angle * Math.PI / 180) * distance;
+            const distanceY = Math.sin(angle * Math.PI / 180) * distance;
+
+            // Star properties
+            const duration = 1 + Math.random();
+            const length = 20 + Math.random() * 30;
+            const height = 1 + Math.random() * 2;
+            const opacity = 0.7 + Math.random() * 0.3;
+
+            shootingStar.style.left = `${x}%`;
+            shootingStar.style.top = `${y}%`;
+            shootingStar.style.height = `${height}px`;
+            shootingStar.style.backgroundColor = 'white';
+            shootingStar.style.boxShadow = `0 0 10px 2px white`;
+            shootingStar.style.borderRadius = '0';
+
+            // Animation properties
+            shootingStar.style.setProperty('--angle', `${angle}deg`);
+            shootingStar.style.setProperty('--length', `${length}px`);
+            shootingStar.style.setProperty('--opacity', opacity);
+            shootingStar.style.setProperty('--distance-x', `${distanceX}px`);
+            shootingStar.style.setProperty('--distance-y', `${distanceY}px`);
+
+            shootingStar.style.animation = `shootingStar ${duration}s forwards linear`;
+
+            container.appendChild(shootingStar);
+
+            // Remove shooting star after animation completes
+            setTimeout(() => {
+                shootingStar.remove();
+            }, duration * 1000);
+        }
+
+        // Recreate galaxy when window is resized
+        window.addEventListener('resize', function () {
+            createGalaxy();
+        });
+    </script>
+    <script src="script.js"></script>
+    <script>
+        // Scroll to top when page loads
+        window.addEventListener('load', function () {
+            // Scroll to the top of the page
+            window.scrollTo(0, 0);
+
+            // Also update the active state in the navigation
+            const homeLink = document.querySelector('nav ul li a[href="#home"]');
+            if (homeLink) {
+                // Remove active class from all links
+                document.querySelectorAll('nav ul li a').forEach(link => {
+                    link.classList.remove('active');
+                });
+
+                // Add active class to home link
+                homeLink.classList.add('active');
+            }
+        });
+    </script>
+</body>
+
+</html>
